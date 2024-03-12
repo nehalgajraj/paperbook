@@ -50,17 +50,54 @@ class AnthropicModel:
                 stop_sequences=["\n\nHuman:", "\n\nAssistant", "</function_calls>"]
             ).content[0].text
 
-             
-        output = self.toolSet.execute(resultC=system_response)
-
-        final_output = self.client.messages.create(
-            model=self.model_name,
-            max_tokens=1024,
-            messages=[messages[0], {"role": "assistant", "content": output}],
-            system=self.prompt,
-        ).content[0].text
+        if "<function_calls>" in system_response:
+            output = self.toolSet.execute(resultC=system_response)
+            final_output = self.client.messages.create(
+                model=self.model_name,
+                max_tokens=1024,
+                messages=[messages[0], {"role": "assistant", "content": output}],
+                system=self.prompt,
+            ).content[0].text
+        else:
+            final_output = system_response
 
         return final_output
+
+
+    def wordboxprocessstream(self,message):
+        messages = [{"role": "user", "content": message}]
+        found_function_calls = False
+
+        with self.client.messages.stream(
+            model=self.model_name,
+            max_tokens=1024,
+            messages=messages,
+            system=self.prompt,
+        ) as stream1:
+
+            system_response = ""
+            for text in stream1.text_stream:
+                system_response += text
+
+                if '<function_calls>' in system_response:
+                    found_function_calls = True
+                else:
+                    output = system_response
+                    yield output
+
+        if found_function_calls:
+            output = self.toolSet.execute(resultC=system_response)
+            with self.client.messages.stream(
+                model=self.model_name,
+                max_tokens=1024,
+                messages=[messages[0], {"role": "assistant", "content": output}],
+                system=self.prompt,
+            ) as stream2:
+                for text in stream2.text_stream:
+                    yield text
+
+
+        
 
 
 

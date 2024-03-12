@@ -3,7 +3,6 @@ from tools.box.calculator import Calculator
 
 
 TOOLS = [
-    # Assuming the TOOLS list is already filled with tool metadata
     {
         "id": "do_pairewise_arithmetic", 
         "function": Calculator.do_pairwise_arithmetic, 
@@ -73,36 +72,31 @@ class Tool:
     
 
     def execute(self,resultC ):
-        # Assuming you've already got the function(s) from get_functions
         functions = self.get_functions()
         if not functions:
             print("No accessible functions for this agent.")
             return
 
-        # Directly using the first available function for simplicity.
-        # In a real-world scenario, you'd have a more sophisticated way to select the correct function.
         function = functions[0]
         
-        # Assuming the metadata structure you provided
         tool_metadata = self.get_metadata()
         if not tool_metadata:
             print("No metadata available for this tool.")
             return
-        tool_metadata = tool_metadata[0]  # Get the first item if there are multiple.
+        tool_metadata = tool_metadata[0]  
 
-        function_metadata = tool_metadata['function']  # Accessing 'function' directly based on your structure
+        function_metadata = tool_metadata['function']  
         parameters_metadata = function_metadata['parameters']['properties']
 
         parameter_values = {}
         for parameter_name in parameters_metadata:
             try:
-                parameter_value = self.extract_between_tags(parameter_name, resultC, strip=True)[0]  # Using strip=True based on your method signature
+                parameter_value = self.extract_between_tags(parameter_name, resultC, strip=True)[0]  
                 parameter_type = parameters_metadata[parameter_name]["type"]
                 if parameter_type == "number":
                     parameter_value = float(parameter_value)
-                elif parameter_type == "string":  # Ensure correct type handling
+                elif parameter_type == "string": 
                     parameter_value = str(parameter_value)
-                # Extend type handling as necessary
                 parameter_values[parameter_name] = parameter_value
             except IndexError:
                 print(f"Missing value for parameter: {parameter_name}")
